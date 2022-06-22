@@ -1,3 +1,4 @@
+from ctypes import alignment
 import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon,QColor
@@ -35,6 +36,9 @@ list_notes_label = QLabel("Список заміток")
 button_note_create = QPushButton("Створити замітку")
 button_note_del = QPushButton("Видалити замітку")
 button_note_save = QPushButton("Зберегти замітку")
+button_note_save.setMinimumWidth(200)
+button_note_rename = QPushButton("Переназвати замітку")
+button_note_rename.setMinimumWidth(200)
 
 field_tag = QLineEdit("")
 field_tag.setPlaceholderText("Вкажіть назву тегу")
@@ -44,12 +48,15 @@ field_text.setTextColor(QColor(255,56,67))
 button_tag_add = QPushButton("Додати тег до замітки")
 button_tag_del = QPushButton("Відкріпити тег від замітки")
 button_tag_search = QPushButton("Шукати замітки по тегу")
+button_tag_search.setMinimumWidth(150)
+button_tag_rename = QPushButton("Перназвати тег")
+button_tag_rename.setMinimumWidth(150)
 
 list_tag = QListWidget()
 list_tag_label = QLabel("Список тегів")
 
-add_note = QLineEdit()
-add_note.setPlaceholderText("Введіть назву замітки")
+add_note_or_rename = QLineEdit()
+add_note_or_rename.setPlaceholderText("Введіть назву замітки")
 
 layout_notes =QHBoxLayout()
 col_1 = QVBoxLayout()
@@ -59,36 +66,34 @@ col_1.addWidget(field_text)
 
 col_2.addWidget(list_notes_label)
 col_2.addWidget(list_notes)
-col_2.addWidget(add_note)
+col_2.addWidget(add_note_or_rename)
 
 row1 = QHBoxLayout()
 row1.addWidget(button_note_create)
 row1.addWidget(button_note_del)
-row2 = QHBoxLayout()
-row2.addWidget(button_note_save)
 
 col_2.addLayout(row1)
-col_2.addLayout(row2)
+col_2.addWidget(button_note_rename,alignment=Qt.AlignHCenter)
+col_2.addWidget(button_note_save,alignment=Qt.AlignHCenter)
 
 col_2.addWidget(list_tag_label)
 col_2.addWidget(list_tag)
 col_2.addWidget(field_tag)
 
-row3 = QHBoxLayout()
-row3.addWidget(button_tag_add)
-row3.addWidget(button_tag_del)
-row4 = QHBoxLayout()
-row4.addWidget(button_tag_search)
+row2 = QHBoxLayout()
+row2.addWidget(button_tag_add)
+row2.addWidget(button_tag_del)
 
-col_2.addLayout(row3)
-col_2.addLayout(row4)
+col_2.addLayout(row2)
+col_2.addWidget(button_tag_rename,alignment=Qt.AlignHCenter)
+col_2.addWidget(button_tag_search,alignment=Qt.AlignHCenter)
 
 layout_notes.addLayout(col_1,stretch=2)
 layout_notes.addLayout(col_2,stretch=1)
 
 main_win.setLayout(layout_notes)
 
-with open (find_file("notes_data.json"),"r",encoding="UTF-8") as file:
+with open (find_file("note_data.json"),"r",encoding="UTF-8") as file:
     notes = json.load(file)
 list_notes.addItems(notes)
 
@@ -98,24 +103,24 @@ def create_note():
         save_note()
         list_tag.clear()
         last_note = None
-    if add_note.text() != "":
+    if add_note_or_rename.text() != "":
         save_note()
 def save_note():
-    if add_note.text() != "" and last_note == None:
-        if add_note.text() not in notes:
-            notes[add_note.text()]= {"Текст":"","Теги":[]}
+    if add_note_or_rename.text() != "" and last_note == None:
+        if add_note_or_rename.text() not in notes:
+            notes[add_note_or_rename.text()]= {"Текст":"","Теги":[]}
             list_tag.clear()
             field_text.setText("")
-            list_notes.addItem(add_note.text())
-            add_note.setText("")
+            list_notes.addItem(add_note_or_rename.text())
+            add_note_or_rename.setText("")
             with open (find_file("note_data.json"),"w",encoding="UTF-8") as file:
                 json.dump(notes,file,indent=4,ensure_ascii=False)
         else:
-            add_note.setText("Така нотатка вже існує")
+            add_note_or_rename.setText("Така нотатка вже існує")
     else:
         key = last_note
         notes[key]["Текст"]=field_text.toPlainText()
-        with open(find_file("note_data.json","w"),encoding="UTF-8") as file:
+        with open(find_file("note_data.json"),"w",encoding="UTF-8") as file:
             json.dump(notes,file,indent=4,ensure_ascii=False)
 def show_note():
     #gains the text from the note and displays it
@@ -156,8 +161,11 @@ def add_tag():
                 json.dump(notes,file,indent=4,ensure_ascii=False)
         else:
             field_tag.setText("Такий тег вже існує")
-    if field_tag.text() == "":
-        field_tag.setText("Вкажіть назву тегу")
+    if last_note is None:
+        field_tag.setText("Виберіть нотатку")
+    else:
+        if field_tag.text() == "":
+            field_tag.setText("Вкажіть назву тегу")
 def del_tag():
     global last_tag
     if list_notes.selectedItems():
@@ -202,6 +210,25 @@ def search_note():
 def select_tag():
     global last_tag
     last_tag = list_tag.selectedItems()[0].text()
+def rename_note():
+    global last_note
+    if last_note is not None:
+        key = last_note
+        if add_note_or_rename.text() != "":
+            new_name = add_note_or_rename.text()
+            notes[new_name] = notes[key] 
+            del notes[key]
+            list_notes.clear()
+            list_notes.addItems(notes)
+            with open(find_file("note_data.json"),"w",encoding="utf-8") as file:
+                json.dump(notes,file,indent=4,ensure_ascii=False)
+            add_note_or_rename.setText("")
+            last_note = new_name
+        else:
+            add_note_or_rename.setText("Введіть нову назву")
+    else:
+        add_note_or_rename.setText("Виберіть нотатку")
+
 def main():
     button_tag_search.clicked.connect(search_note)
     button_note_del.clicked.connect(del_note)
@@ -209,6 +236,7 @@ def main():
     button_tag_add.clicked.connect(add_tag)
     button_note_create.clicked.connect(create_note)
     button_note_save.clicked.connect(save_note)
+    button_note_rename.clicked.connect(rename_note)
     list_notes.itemClicked.connect(show_note)
     list_tag.itemClicked.connect(select_tag)
     main_win.show()
