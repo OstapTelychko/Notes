@@ -211,13 +211,15 @@ def select_tag():
     global last_tag
     last_tag = list_tag.selectedItems()[0].text()
 def rename_note():
-    global last_note
+    global last_note,notes
     if last_note is not None:
-        key = last_note
+        old_name = last_note
         if add_note_or_rename.text() != "":
             new_name = add_note_or_rename.text()
-            notes[new_name] = notes[key] 
-            del notes[key]
+            new_notes = dict()
+            for key,value in notes.items():
+                new_notes[key.replace(old_name,new_name)] = value
+            notes = new_notes
             list_notes.clear()
             list_notes.addItems(notes)
             with open(find_file("note_data.json"),"w",encoding="utf-8") as file:
