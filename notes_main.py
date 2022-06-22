@@ -1,5 +1,6 @@
+import os
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon,QColor
 from PyQt5.QtWidgets import (
         QApplication, QWidget, 
         QListWidget,QLineEdit, QFormLayout,
@@ -7,6 +8,10 @@ from PyQt5.QtWidgets import (
         QPushButton, QLabel,QTextEdit,QInputDialog)
 import json
 
+def find_file(file):
+    "Return path to file"
+    Path = os.path.join(os.environ.get("_MEIPASS2",os.path.abspath(".")),file).replace("\\","/")
+    return Path
 
 #variables for auto-save
 last_note = None
@@ -32,8 +37,9 @@ button_note_del = QPushButton("Видалити замітку")
 button_note_save = QPushButton("Зберегти замітку")
 
 field_tag = QLineEdit("")
-field_tag.setPlaceholderText("Введіть текст")
+field_tag.setPlaceholderText("Вкажіть назву тегу")
 field_text = QTextEdit()
+field_text.setTextColor(QColor(255,56,67))
 
 button_tag_add = QPushButton("Додати тег до замітки")
 button_tag_del = QPushButton("Відкріпити тег від замітки")
@@ -43,6 +49,7 @@ list_tag = QListWidget()
 list_tag_label = QLabel("Список тегів")
 
 add_note = QLineEdit()
+add_note.setPlaceholderText("Введіть назву замітки")
 
 layout_notes =QHBoxLayout()
 col_1 = QVBoxLayout()
@@ -52,7 +59,6 @@ col_1.addWidget(field_text)
 
 col_2.addWidget(list_notes_label)
 col_2.addWidget(list_notes)
-
 col_2.addWidget(add_note)
 
 row1 = QHBoxLayout()
@@ -82,7 +88,7 @@ layout_notes.addLayout(col_2,stretch=1)
 
 main_win.setLayout(layout_notes)
 
-with open ("Notes/note_data.json","r",encoding="UTF-8") as file:
+with open (find_file("notes_data.json"),"r",encoding="UTF-8") as file:
     notes = json.load(file)
 list_notes.addItems(notes)
 
@@ -90,28 +96,27 @@ def create_note():
     global last_note
     if last_note != None:
         save_note()
-        add_note.setPlaceholderText("Введіть назву замітки")
         list_tag.clear()
         last_note = None
-    else:
-        add_note.setPlaceholderText("Введіть назву замітки і збережіть")
-        add_note.setText("")
+    if add_note.text() != "":
+        save_note()
 def save_note():
-    if add_note.text() != "" and  last_note == None:
-        notes[add_note.text()]= {"Текст":"","Теги":[]}
-        list_tag.clear()
-        field_text.setText("")
-        list_notes.addItem(add_note.text())
-        add_note.setText("")
-        with open ("note_data.json","w",encoding="UTF-8") as file:
-            json.dump(notes,file)
+    if add_note.text() != "" and last_note == None:
+        if add_note.text() not in notes:
+            notes[add_note.text()]= {"Текст":"","Теги":[]}
+            list_tag.clear()
+            field_text.setText("")
+            list_notes.addItem(add_note.text())
+            add_note.setText("")
+            with open (find_file("note_data.json"),"w",encoding="UTF-8") as file:
+                json.dump(notes,file,indent=4,ensure_ascii=False)
+        else:
+            add_note.setText("Така нотатка вже існує")
     else:
         key = last_note
         notes[key]["Текст"]=field_text.toPlainText()
-        with open("Notes/note_data.json","w",encoding="UTF-8") as file:
-            json.dump(notes,file)
-
-
+        with open(find_file("note_data.json","w"),encoding="UTF-8") as file:
+            json.dump(notes,file,indent=4,ensure_ascii=False)
 def show_note():
     #gains the text from the note and displays it
     global last_note
@@ -121,15 +126,14 @@ def show_note():
         field_text.setText(notes[key]["Текст"])
         list_tag.clear()
         list_tag.addItems(notes[key]["Теги"])
-        last_note = key
     else:
         key = list_notes.selectedItems()[0].text()
         field_text.setText(notes[key]["Текст"])
         list_tag.clear()
         list_tag.addItems(notes[key]["Теги"])
-        last_note = key
-
+    last_note = key
 def del_note():
+    global last_note
     if list_notes.selectedItems():
         key = last_note
         del notes[key]
@@ -137,50 +141,53 @@ def del_note():
         list_tag.clear()
         field_text.clear()
         list_notes.addItems(notes)
-        with open("note_data.json","w",encoding="UTF-8") as file:
-            json.dump(notes,file)
+        with open(find_file("note_data.json"),"w",encoding="UTF-8") as file:
+            json.dump(notes,file,indent=4,ensure_ascii=False)
         last_note = None
-
 def add_tag():
     if last_note !=None and field_tag.text() != "":
         key = last_note
         tag = field_tag.text()
-        field_tag.setPlaceholderText("")
         if tag not in notes[key]["Теги"]:
             notes[key]["Теги"].append(tag)               
             list_tag.addItem(tag)
             field_tag.clear()
-        with open("note_data.json","w",encoding="UTF-8") as file:
-            json.dump(notes,file)
+            with open(find_file("note_data.json"),"w",encoding="UTF-8") as file:
+                json.dump(notes,file,indent=4,ensure_ascii=False)
+        else:
+            field_tag.setText("Такий тег вже існує")
     if field_tag.text() == "":
-        field_tag.setPlaceholderText("Вкажіть назву тегу")
-
-
+        field_tag.setText("Вкажіть назву тегу")
 def del_tag():
+    global last_tag
     if list_notes.selectedItems():
-        key = list_notes.selectedItems()[0].text()
-        tag = list_tag.selectedItems()[0].text()
-        notes[key]["Теги"].remove(tag)
-        list_tag.clear()
-        list_tag.addItems(notes[key]["Теги"])
-        with open("note_data.json","w",encoding="UTF-8") as file:
-            json.dump(notes,file)
-        last_tag = None
-
+        if last_tag is not None:
+            key = last_note
+            tag = last_tag
+            notes[key]["Теги"].remove(tag)
+            list_tag.clear()
+            list_tag.addItems(notes[key]["Теги"])
+            with open(find_file("note_data.json"),"w",encoding="UTF-8") as file:
+                json.dump(notes,file,indent=4,ensure_ascii=False)
+            last_tag = None
+        else:
+            field_tag.setText("Перше виберіть тег")
 def search_note():
-    tag = field_tag.text()
-    field_tag.setPlaceholderText("Введіть текст")
-    if button_tag_search.text() == "Шукати замітки по тегу" and tag != "":
-        notes_filtered = []
-        for note in notes:
-            for tags in notes[note]["Теги"]:
-                if tag in tags:
-                    notes_filtered.append(note)
-        button_tag_search.setText("Очистити пошук")
-        list_notes.clear()
-        list_tag.clear()
-        list_notes.addItems(notes_filtered)
-    elif button_tag_search.text() == "Очистити пошук":
+    if field_tag.text() != "":
+        tag = field_tag.text()
+        if button_tag_search.text() == "Шукати замітки по тегу" and tag != "":
+            notes_filtered = []
+            for note in notes:
+                for tags in notes[note]["Теги"]:
+                    if tag in tags:
+                        notes_filtered.append(note)
+            button_tag_search.setText("Очистити пошук")
+            list_notes.clear()
+            list_tag.clear()
+            list_notes.addItems(notes_filtered)
+    else:
+        field_tag.setText("Введіть назву шукаємого тега")
+    if button_tag_search.text() == "Очистити пошук":
         notes_filtered = []
         list_notes.clear()
         list_notes.addItems(notes)
@@ -192,11 +199,9 @@ def search_note():
     else:
         if tag == "":
             field_tag.setPlaceholderText("Вкажіть назву тегу для пошуку")
-
-def last_tag():
+def select_tag():
     global last_tag
     last_tag = list_tag.selectedItems()[0].text()
-
 def main():
     button_tag_search.clicked.connect(search_note)
     button_note_del.clicked.connect(del_note)
@@ -205,7 +210,7 @@ def main():
     button_note_create.clicked.connect(create_note)
     button_note_save.clicked.connect(save_note)
     list_notes.itemClicked.connect(show_note)
-    list_tag.itemClicked.connect(last_tag)
+    list_tag.itemClicked.connect(select_tag)
     main_win.show()
     app.exec()
 
