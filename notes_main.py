@@ -1,4 +1,3 @@
-from ctypes import alignment
 import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon,QColor
@@ -105,6 +104,8 @@ def create_note():
         last_note = None
     if add_note_or_rename.text() != "":
         save_note()
+    else:
+        add_note_or_rename.setText("Введіть назву нотатки")
 def save_note():
     if add_note_or_rename.text() != "" and last_note == None:
         if add_note_or_rename.text() not in notes:
@@ -136,6 +137,9 @@ def show_note():
         field_text.setText(notes[key]["Текст"])
         list_tag.clear()
         list_tag.addItems(notes[key]["Теги"])
+        field_tag.setText("")
+        if add_note_or_rename.text() == "Виберіть нотатку":
+            add_note_or_rename.setText("")
     last_note = key
 def del_note():
     global last_note
@@ -149,6 +153,8 @@ def del_note():
         with open(find_file("note_data.json"),"w",encoding="UTF-8") as file:
             json.dump(notes,file,indent=4,ensure_ascii=False)
         last_note = None
+    else:
+        add_note_or_rename.setText("Виберіть нотатку")
 def add_tag():
     if last_note !=None and field_tag.text() != "":
         key = last_note
@@ -209,6 +215,8 @@ def search_note():
             field_tag.setPlaceholderText("Вкажіть назву тегу для пошуку")
 def select_tag():
     global last_tag
+    if field_tag.text() == "Виберіть тег":
+        field_tag.setText("")
     last_tag = list_tag.selectedItems()[0].text()
 def rename_note():
     global last_note,notes
@@ -216,10 +224,10 @@ def rename_note():
         old_name = last_note
         if add_note_or_rename.text() != "":
             new_name = add_note_or_rename.text()
-            new_notes = dict()
+            dict_with_renamed_note = dict()
             for key,value in notes.items():
-                new_notes[key.replace(old_name,new_name)] = value
-            notes = new_notes
+                dict_with_renamed_note[key.replace(old_name,new_name)] = value
+            notes = dict_with_renamed_note
             list_notes.clear()
             list_notes.addItems(notes)
             with open(find_file("note_data.json"),"w",encoding="utf-8") as file:
@@ -230,6 +238,26 @@ def rename_note():
             add_note_or_rename.setText("Введіть нову назву")
     else:
         add_note_or_rename.setText("Виберіть нотатку")
+def rename_tag():
+    global last_tag
+    if last_tag is not None and last_note is not None:
+        old_name = last_tag
+        if field_tag.text() != "":
+            new_name = field_tag.text()
+            index=notes[last_note]["Теги"].index(old_name)
+            notes[last_note]["Теги"][index] = new_name
+            list_tag.clear()
+            list_tag.addItems(notes[last_note]["Теги"])
+            last_tag = None
+            field_tag.setText("")
+            with open(find_file("note_data.json"),"w",encoding="utf-8") as file:
+                json.dump(notes,file,indent=4,ensure_ascii=False)
+        else:
+            field_tag.setText("Введіть нову назву тега")
+    elif last_note is None:
+        field_tag.setText("Перше виберіть нотатку")
+    else:
+        field_tag.setText("Виберіть тег")
 
 def main():
     button_tag_search.clicked.connect(search_note)
@@ -239,6 +267,7 @@ def main():
     button_note_create.clicked.connect(create_note)
     button_note_save.clicked.connect(save_note)
     button_note_rename.clicked.connect(rename_note)
+    button_tag_rename.clicked.connect(rename_tag)
     list_notes.itemClicked.connect(show_note)
     list_tag.itemClicked.connect(select_tag)
     main_win.show()
