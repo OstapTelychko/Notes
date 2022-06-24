@@ -1,3 +1,4 @@
 {
-    "theme":"white"
+    "default": "white",
+    "theme": "white"
 }

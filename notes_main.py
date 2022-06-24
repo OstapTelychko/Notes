@@ -1,11 +1,11 @@
 import os
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt,QSize
 from PyQt5.QtGui import QIcon,QColor
 from PyQt5.QtWidgets import (
         QApplication, QWidget, 
-        QListWidget,QLineEdit, QFormLayout,
+        QListWidget,QLineEdit,
         QHBoxLayout, QVBoxLayout,   
-        QPushButton, QLabel,QTextEdit,QInputDialog)
+        QPushButton, QLabel,QTextEdit,QToolButton)
 import json
 
 def find_file(file):
@@ -17,11 +17,47 @@ def find_file(file):
 last_note = None
 last_tag = None
 
-
+#themes
+black_theme = """QWidget{
+    background-color:rgb(17, 17, 18);
+    color:white;
+    border:none;
+}
+QPushButton{
+    background-color:rgb(34, 33, 32);
+}
+QListWidget{
+    background-color:rgb(59, 59, 59);
+}
+QToolButton{
+    background-color:rgb(17,17,18);
+}
+QLineEdit{
+    background-color:rgb(40,40,40);
+}
+"""
+white_theme = """QWidget{
+    background-color:white;
+    border:none;
+}
+QToolButton{
+    background-color:white;
+}
+QLineEdit{
+    background-color:rgb(205,205,205)
+}
+QTextEdit{
+    background-color:rgb(245,245,245)
+}
+QPushButton{
+    background-color:rgb(180,180,180)
+}
+QListWidget{
+    background-color:rgb(225,225,225)
+}"""
 app = QApplication([])
-
 #app icon
-icon = QIcon("Notes.ico")
+icon = QIcon(find_file("Notes.ico"))
 
 #interface
 main_win = QWidget()
@@ -42,7 +78,6 @@ button_note_rename.setMinimumWidth(200)
 field_tag = QLineEdit("")
 field_tag.setPlaceholderText("Вкажіть назву тегу")
 field_text = QTextEdit()
-field_text.setTextColor(QColor(255,56,67))
 
 button_tag_add = QPushButton("Додати тег до замітки")
 button_tag_del = QPushButton("Відкріпити тег від замітки")
@@ -57,12 +92,15 @@ list_tag_label = QLabel("Список тегів")
 add_note_or_rename = QLineEdit()
 add_note_or_rename.setPlaceholderText("Введіть назву замітки")
 
+change_theme_button = QToolButton()
+
 layout_notes =QHBoxLayout()
 col_1 = QVBoxLayout()
 col_2 = QVBoxLayout()
 
 col_1.addWidget(field_text)
 
+col_2.addWidget(change_theme_button,alignment=Qt.AlignRight |Qt.AlignTop)
 col_2.addWidget(list_notes_label)
 col_2.addWidget(list_notes)
 col_2.addWidget(add_note_or_rename)
@@ -118,7 +156,7 @@ def save_note():
                 json.dump(notes,file,indent=4,ensure_ascii=False)
         else:
             add_note_or_rename.setText("Така нотатка вже існує")
-    else:
+    elif last_note is not None:
         key = last_note
         notes[key]["Текст"]=field_text.toPlainText()
         with open(find_file("note_data.json"),"w",encoding="UTF-8") as file:
@@ -258,8 +296,24 @@ def rename_tag():
         field_tag.setText("Перше виберіть нотатку")
     else:
         field_tag.setText("Виберіть тег")
+def change_theme():
+    global data
+    with open(find_file("theme.json"),"r",encoding="utf-8") as file:
+        data = json.load(file)
+    if data["theme"] == "white":
+        change_theme_button.setIcon(QIcon(find_file("white_theme.png")))
+        main_win.setStyleSheet(black_theme)
+        data["theme"] = "black"
+    else:
+        change_theme_button.setIcon(QIcon(find_file("black_theme.png")))
+        data["theme"] = "white"
+        main_win.setStyleSheet(white_theme)
+    with open(find_file("theme.json"),"w",encoding="utf-8") as file:
+        json.dump(data,file,indent=4,ensure_ascii=False)
+    change_theme_button.setIconSize(QSize(20,20))
 
 def main():
+    global data
     button_tag_search.clicked.connect(search_note)
     button_note_del.clicked.connect(del_note)
     button_tag_del.clicked.connect(del_tag)
@@ -268,8 +322,18 @@ def main():
     button_note_save.clicked.connect(save_note)
     button_note_rename.clicked.connect(rename_note)
     button_tag_rename.clicked.connect(rename_tag)
+    change_theme_button.clicked.connect(change_theme)
     list_notes.itemClicked.connect(show_note)
     list_tag.itemClicked.connect(select_tag)
+    with open(find_file("theme.json"),"r",encoding="utf-8") as file:
+        data = json.load(file)
+    if data["theme"] == "black":
+        main_win.setStyleSheet(black_theme)
+        change_theme_button.setIcon(QIcon(find_file("white_theme.png")))
+    else:
+        main_win.setStyleSheet(white_theme)
+        change_theme_button.setIcon(QIcon(find_file("black_theme.png")))
+    change_theme_button.setIconSize(QSize(20,20))
     main_win.show()
     app.exec()
 
