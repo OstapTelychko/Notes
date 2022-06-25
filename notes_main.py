@@ -27,7 +27,7 @@ QPushButton{
     background-color:rgb(34, 33, 32);
 }
 QListWidget{
-    background-color:rgb(59, 59, 59);
+    background-color:rgb(59, 59, 60);
 }
 QToolButton{
     background-color:rgb(17,17,18);
@@ -35,25 +35,28 @@ QToolButton{
 QLineEdit{
     background-color:rgb(40,40,40);
 }
+QTextEdit{
+    background-color:rgb(30,30,30)
+}
 """
 white_theme = """QWidget{
-    background-color:white;
+    background-color:rgb(205,205,235);
     border:none;
 }
 QToolButton{
-    background-color:white;
+    background-color:rgb(205,205,235);
 }
 QLineEdit{
-    background-color:rgb(205,205,205)
+    background-color:rgb(185,185,125);
 }
 QTextEdit{
-    background-color:rgb(245,245,245)
+    background-color:rgb(255,255,75);
 }
 QPushButton{
-    background-color:rgb(180,180,180)
+    background-color:rgb(190,190,170)
 }
 QListWidget{
-    background-color:rgb(225,225,225)
+    background-color:rgb(255,255,150);
 }"""
 app = QApplication([])
 #app icon
@@ -125,7 +128,9 @@ col_2.addLayout(row2)
 col_2.addWidget(button_tag_rename,alignment=Qt.AlignHCenter)
 col_2.addWidget(button_tag_search,alignment=Qt.AlignHCenter)
 
+
 layout_notes.addLayout(col_1,stretch=2)
+layout_notes.addSpacing(15)
 layout_notes.addLayout(col_2,stretch=1)
 
 main_win.setLayout(layout_notes)
@@ -194,22 +199,22 @@ def del_note():
     else:
         add_note_or_rename.setText("Виберіть нотатку")
 def add_tag():
-    if last_note !=None and field_tag.text() != "":
-        key = last_note
-        tag = field_tag.text()
-        if tag not in notes[key]["Теги"]:
-            notes[key]["Теги"].append(tag)               
-            list_tag.addItem(tag)
-            field_tag.clear()
-            with open(find_file("note_data.json"),"w",encoding="UTF-8") as file:
-                json.dump(notes,file,indent=4,ensure_ascii=False)
+    if last_note is not None:
+        if  field_tag.text() != "":
+            key = last_note
+            tag = field_tag.text()
+            if tag not in notes[key]["Теги"]:
+                notes[key]["Теги"].append(tag)               
+                list_tag.addItem(tag)
+                field_tag.clear()
+                with open(find_file("note_data.json"),"w",encoding="UTF-8") as file:
+                    json.dump(notes,file,indent=4,ensure_ascii=False)
+            else:
+                field_tag.setText("Такий тег вже існує")
         else:
-            field_tag.setText("Такий тег вже існує")
+            field_tag.setText("Вкажіть назву тегу")
     if last_note is None:
         field_tag.setText("Виберіть нотатку")
-    else:
-        if field_tag.text() == "":
-            field_tag.setText("Вкажіть назву тегу")
 def del_tag():
     global last_tag
     if list_notes.selectedItems():
@@ -225,9 +230,10 @@ def del_tag():
         else:
             field_tag.setText("Перше виберіть тег")
 def search_note():
-    if field_tag.text() != "":
-        tag = field_tag.text()
-        if button_tag_search.text() == "Шукати замітки по тегу" and tag != "":
+    if button_tag_search.text() == "Шукати замітки по тегу" and field_tag.text() != "Введіть назву шукаємого тега":
+        if field_tag.text() != "":
+            tag = field_tag.text()
+            field_tag.clear()
             notes_filtered = []
             for note in notes:
                 for tags in notes[note]["Теги"]:
@@ -237,20 +243,18 @@ def search_note():
             list_notes.clear()
             list_tag.clear()
             list_notes.addItems(notes_filtered)
+        else:
+            field_tag.setText("Введіть назву шукаємого тега")
     else:
-        field_tag.setText("Введіть назву шукаємого тега")
-    if button_tag_search.text() == "Очистити пошук":
-        notes_filtered = []
-        list_notes.clear()
-        list_notes.addItems(notes)
-        list_tag.clear()
-        if last_note != None:
-            save_note()
-        field_tag.clear()
-        button_tag_search.setText("Шукати замітки по тегу")
-    else:
-        if tag == "":
-            field_tag.setPlaceholderText("Вкажіть назву тегу для пошуку")
+        if button_tag_search.text() == "Очистити пошук":
+            notes_filtered = []
+            list_notes.clear()
+            list_notes.addItems(notes)
+            list_tag.clear()
+            if last_note != None:
+                save_note()
+            field_tag.clear()
+            button_tag_search.setText("Шукати замітки по тегу")
 def select_tag():
     global last_tag
     if field_tag.text() == "Виберіть тег":
