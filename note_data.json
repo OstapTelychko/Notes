@@ -1,5 +1,5 @@
 {
-    "Модуль Pygame-загрузка музики": {
+    "Pygame завантаження музики": {
         "Текст": "Щоб імпортувати молуль pygame треба прописати 'import pygame'\n\nЩоб запустити фонову музику треба в розділі '@play.when_program_starts' прописати\n\npygame.mixer_music.load(назва музики  в форматі mp3) pygame.mixer_music.play()\n\nЩоб запусти мелoдію в любий момент треба прописати зміну в якій вона збережеться = pygame.mixer.Sound(назва мелодій в форматі ogg або wav)\n\nПрописуєм зміну в якій вона збереглась.play()\n\nЩоб регулювати гучність мелодії треба прописати pygame.music.set_volum(наскільки підняти чи опустити гучність в процентах)",
         "Теги": [
             "Pygame музика"
@@ -12,7 +12,7 @@
         ]
     },
     "Ласкаво просимо": {
-        "Текст": "У цьому додатку можна створити замітки з тегами12",
+        "Текст": "У цьому додатку можна створити замітки з тегами127",
         "Теги": [
             "розумні",
             "інструкція"
@@ -22,6 +22,12 @@
         "Текст": "Hello world!",
         "Теги": [
             "greetings"
+        ]
+    },
+    "Test linux": {
+        "Текст": "\nsudo apt-get install '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev\n\nmaybe\npip install opencv-python-headless\nsudo apt-get install libxcb-xinerama0\npip uninstall opencv-python\n7890",
+        "Теги": [
+            "Linux"
         ]
     }
 }
